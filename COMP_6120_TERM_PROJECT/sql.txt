@@ -1,0 +1,291 @@
+* Query 1: Show the subject names of books supplied by supplier2
+SELECT CategoryName
+FROM db_subject
+WHERE SubjectID IN (
+    SELECT DISTINCT SubjectID
+    FROM db_book
+    WHERE SupplierID = (
+        SELECT SupplierID
+        FROM db_supplier
+        WHERE CompanyName = 'supplier2'
+    )
+);
+
+Execution:
+CategoryName
+category1
+category2
+
+* Query 2: Show the name and price of the most expensive book supplied by supplier3
+SELECT B.Title, B.UnitPrice
+FROM db_book B
+JOIN db_supplier S ON B.SupplierID = S.SupplierID
+WHERE S.CompanyName = 'supplier3'
+ORDER BY B.UnitPrice DESC
+LIMIT 1;
+
+Execution:
+Title | UnitPrice
+book7 | 56.90
+
+* Query 3: Show the unique names of all books ordered by lastname1 firstname1
+SELECT DISTINCT B.Title
+FROM db_customer C
+INNER JOIN db_order O ON C.CustomerID = O.CustomerID
+INNER JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+INNER JOIN db_book B ON OD.BookID = B.BookID
+WHERE C.LastName = 'lastname1' AND C.FirstName = 'firstname1';
+
+Execution:
+Title
+book1
+book4
+book6
+book7
+
+* Query 4
+SELECT Title
+FROM db_book
+WHERE Quantity > 10;
+
+Execution:
+Title
+book4
+book6
+book7
+
+* Query 5
+SELECT SUM(B.UnitPrice * OD.Quantity) AS TotalPrice
+FROM db_book B, db_order_detail OD, db_order O
+WHERE B.BookID = OD.BookID
+AND OD.OrderID = O.OrderID
+AND O.CustomerID = (
+    SELECT CustomerID
+    FROM db_customer
+    WHERE LastName = 'lastname1' AND FirstName = 'firstname1'
+);
+
+Execution:
+TotalPrice
+266.96
+
+* Query 6
+SELECT C.LastName, C.FirstName
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+HAVING SUM(B.UnitPrice * OD.Quantity) < 80;
+
+Execution:
+LastName  | FirstName
+lastname2 | firstname2
+lastname2 | firstname3
+
+* Query 7
+SELECT Title
+FROM db_book
+WHERE SupplierID = (
+    SELECT SupplierID
+    FROM db_supplier
+    WHERE CompanyName = 'supplier2'
+);
+
+Execution:
+Title
+book3
+book5
+
+* Query 8
+SELECT SUM(B.UnitPrice * OD.Quantity) AS TotalPrice, C.FirstName, C.LastName
+FROM db_customer C, db_order O, db_order_detail OD, db_book B
+WHERE C.CustomerID = O.CustomerID
+AND O.OrderID = OD.OrderID
+AND OD.BookID = B.BookID
+GROUP BY C.CustomerID, C.FirstName, C.LastName
+ORDER BY TotalPrice DESC;
+
+Execution:
+LastName  | FirstName  | TotalPrice
+lastname4 | firstname4 | 296.38
+lastname1 | firstname1 | 266.96
+lastname2 | firstname2 | 78.90
+lastname3 | firstname3 | 12.34
+
+* Query 9
+SELECT DISTINCT S.ShpperName, B.Title
+FROM db_shipper S
+JOIN db_order O ON S.ShipperID = O.ShipperID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+WHERE O.ShippedDate = '8/4/2016';
+
+Execution:
+Title | ShpperName
+book5 | shipper2
+book3 | shipper1
+book4 | shipper1
+book7 | shipper1
+book1 | shipper1
+
+* Query 10
+SELECT DISTINCT B.Title
+FROM db_book B
+WHERE EXISTS (
+    SELECT 1
+    FROM db_order_detail OD
+    JOIN db_order O ON OD.OrderID = O.OrderID
+    JOIN db_customer C ON O.CustomerID = C.CustomerID
+    WHERE OD.BookID = B.BookID
+    AND C.LastName = 'lastname1' AND C.FirstName = 'firstname1'
+)
+AND EXISTS (
+    SELECT 1
+    FROM db_order_detail OD2
+    JOIN db_order O2 ON OD2.OrderID = O2.OrderID
+    JOIN db_customer C2 ON O2.CustomerID = C2.CustomerID
+    WHERE OD2.BookID = B.BookID
+    AND C2.LastName = 'lastname4' AND C2.FirstName = 'firstname4'
+);
+
+Execution:
+Title
+book1
+book4
+book7
+
+* Query 11
+SELECT DISTINCT B.Title
+FROM db_book B, db_order_detail OD, db_order O, db_employee E
+WHERE B.BookID = OD.BookID
+AND OD.OrderID = O.OrderID
+AND O.EmployeeID = E.EmployeeID
+AND E.LastName = 'lastname6' AND E.FirstName = 'firstname6';
+
+Execution:
+Title
+book6
+book7
+book3
+book4
+book1
+
+* Query 12
+SELECT B.Title, SUM(OD.Quantity) AS TotalQuantity
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+GROUP BY B.BookID, B.Title
+ORDER BY TotalQuantity ASC;
+
+Execution:
+Title | TotalQuantity
+book5 | 1
+book3 | 2
+book4 | 2
+book6 | 2
+book7 | 4
+book1 | 6
+
+* Query 13
+SELECT C.LastName, C.FirstName
+FROM db_customer C
+WHERE (
+    SELECT COUNT(DISTINCT OD.BookID)
+    FROM db_order O
+    JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+    WHERE O.CustomerID = C.CustomerID
+) >= 2;
+
+Execution:
+LastName  | FirstName
+lastname1 | firstname1
+lastname4 | firstname4
+
+* Query 14
+SELECT DISTINCT C.LastName, C.FirstName, B.Title
+FROM db_customer C, db_order O, db_order_detail OD, db_book B
+WHERE C.CustomerID = O.CustomerID
+AND O.OrderID = OD.OrderID
+AND OD.BookID = B.BookID
+AND B.SubjectID IN (
+    SELECT SubjectID
+    FROM db_subject
+    WHERE CategoryName IN ('category3', 'category4')
+);
+
+Execution:
+LastName  | FirstName  | Title
+lastname1 | firstname1 | book6
+lastname1 | firstname1 | book7
+lastname4 | firstname4 | book7
+
+* Query 15
+SELECT DISTINCT C.FirstName, C.LastName
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_customer C ON O.CustomerID = C.CustomerID
+WHERE B.Author = 'author1';
+
+Execution:
+FirstName  | LastName
+firstname1 | lastname1
+firstname4 | lastname4
+firstname3 | lastname3
+
+* Query 16
+SELECT E.FirstName, E.LastName, SUM(B.UnitPrice * OD.Quantity) AS TotalSales
+FROM db_employee E, db_order O, db_order_detail OD, db_book B
+WHERE E.EmployeeID = O.EmployeeID
+AND O.OrderID = OD.OrderID
+AND OD.BookID = B.BookID
+GROUP BY E.EmployeeID, E.FirstName, E.LastName;
+
+Execution:
+FirstName  | LastName  | TotalSales
+firstname5 | lastname5 | 162.82
+firstname6 | lastname6 | 491.76
+
+* Query 17
+SELECT B.Title, OD.Quantity
+FROM db_order O
+INNER JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+INNER JOIN db_book B ON OD.BookID = B.BookID
+WHERE O.ShippedDate IS NULL
+AND O.OrderDate <= '8/4/2016';
+
+Execution:
+Title | Quantity
+book6 | 2
+book7 | 3
+
+* Query 18
+SELECT C.LastName, C.FirstName, SUM(OD.Quantity) AS TotalQuantity
+FROM db_customer C
+INNER JOIN db_order O ON C.CustomerID = O.CustomerID
+INNER JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+HAVING COUNT(DISTINCT OD.BookID) > 1
+ORDER BY TotalQuantity DESC;
+
+Execution:
+LastName  | FirstName  | TotalQuantity
+lastname1 | firstname1 | 9
+lastname4 | firstname4 | 6
+
+* Query 19
+SELECT C.LastName, C.FirstName, C.Phone
+FROM db_customer C
+WHERE (
+    SELECT COUNT(DISTINCT B.BookID)
+    FROM db_order O
+    JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+    JOIN db_book B ON OD.BookID = B.BookID
+    WHERE O.CustomerID = C.CustomerID
+) > 3;
+
+Execution: 
+LastName  | FirstName  | Phone
+lastname1 | firstname1 | 334-001-001
+lastname4 | firstname4 | 334-004-004
