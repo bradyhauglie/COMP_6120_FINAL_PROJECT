@@ -1,4 +1,4 @@
-* Query 1: Show the subject names of books supplied by supplier2
+* Query 1
 SELECT CategoryName
 FROM db_subject
 WHERE SubjectID IN (
@@ -16,7 +16,7 @@ CategoryName
 category1
 category2
 
-* Query 2: Show the name and price of the most expensive book supplied by supplier3
+* Query 2
 SELECT B.Title, B.UnitPrice
 FROM db_book B
 JOIN db_supplier S ON B.SupplierID = S.SupplierID
@@ -28,7 +28,7 @@ Execution:
 Title | UnitPrice
 book7 | 56.90
 
-* Query 3: Show the unique names of all books ordered by lastname1 firstname1
+* Query 3
 SELECT DISTINCT B.Title
 FROM db_customer C
 INNER JOIN db_order O ON C.CustomerID = O.CustomerID
