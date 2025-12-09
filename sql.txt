@@ -1,0 +1,220 @@
+-- Query 1: Show the subject names of books supplied by supplier2
+SELECT DISTINCT S.CategoryName
+FROM db_subject S
+JOIN db_book B ON S.SubjectID = B.SubjectID
+JOIN db_supplier SP ON B.SupplierID = SP.SupplierID
+WHERE SP.CompanyName = 'supplier2';
+
+Execution:
+CategoryName
+category1
+category2
+
+-- Query 2: Show the name and price of the most expensive book supplied by supplier3
+SELECT B.Title, B.UnitPrice
+FROM db_book B
+JOIN db_supplier S ON B.SupplierID = S.SupplierID
+WHERE S.CompanyName = 'supplier3'
+ORDER BY B.UnitPrice DESC
+LIMIT 1;
+
+Execution:
+Title | UnitPrice
+book7 | 56.90
+
+-- Query 3: Show the unique names of all books ordered by lastname1 firstname1
+SELECT DISTINCT B.Title
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_customer C ON O.CustomerID = C.CustomerID
+WHERE C.LastName = 'lastname1' AND C.FirstName = 'firstname1';
+
+Execution:
+Title
+book1
+book4
+book6
+book7
+
+-- Query 4: Show the title of books which have more than 10 units in stock
+SELECT Title
+FROM db_book
+WHERE Quantity > 10;
+
+Execution:
+Title
+book4
+book6
+book7
+
+-- Query 5: Show the total price lastname1 firstname1 has paid for the books
+SELECT SUM(B.UnitPrice * OD.Quantity) AS TotalPrice
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_customer C ON O.CustomerID = C.CustomerID
+WHERE C.LastName = 'lastname1' AND C.FirstName = 'firstname1';
+
+Execution:
+TotalPrice
+266.96
+
+-- Query 6: Show the names of the customers who have paid less than $80 in totals
+SELECT C.LastName, C.FirstName
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+HAVING SUM(B.UnitPrice * OD.Quantity) < 80;
+
+Execution:
+LastName | FirstName
+lastname2    | firstname2
+lastname2    | firstname3
+
+-- Query 7: Show the name of books supplied by supplier2
+SELECT B.Title
+FROM db_book B
+JOIN db_supplier S ON B.SupplierID = S.SupplierID
+WHERE S.CompanyName = 'supplier2';
+
+Execution:
+Title
+book3
+book5
+
+-- Query 8: Show the total price each customer paid and their names. List the result in descending price
+SELECT C.LastName, C.FirstName, SUM(B.UnitPrice * OD.Quantity) AS TotalPrice
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+ORDER BY TotalPrice DESC;
+
+Execution:
+LastName  | FirstName  | TotalPrice
+lastname4 | firstname4 | 296.38
+lastname1 | firstname1 | 266.96
+lastname2 | firstname2 | 78.90
+lastname3 | firstname3 | 12.34
+
+-- Query 9: Show the names of all the books shipped on 08/04/2016 and their shippers' names
+SELECT DISTINCT B.Title, S.ShpperName
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_shipper S ON O.ShipperID = S.ShipperID
+WHERE O.ShippedDate = '8/4/2016';
+
+Execution:
+Title | ShpperName
+book5 | shipper2
+book3 | shipper1
+book4 | shipper1
+book7 | shipper1
+book1 | shipper1
+
+-- Query 10: Show the unique names of all the books lastname1 firstname1 and lastname4 firstname4 both ordered
+SELECT DISTINCT B.Title
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_customer C ON O.CustomerID = C.CustomerID
+WHERE C.LastName = 'lastname1' AND C.FirstName = 'firstname1'
+AND B.BookID IN (
+    SELECT DISTINCT B2.BookID
+    FROM db_book B2
+    JOIN db_order_detail OD2 ON B2.BookID = OD2.BookID
+    JOIN db_order O2 ON OD2.OrderID = O2.OrderID
+    JOIN db_customer C2 ON O2.CustomerID = C2.CustomerID
+    WHERE C2.LastName = 'lastname4' AND C2.FirstName = 'firstname4'
+);
+
+Execution:
+Title
+book1
+book4
+book7
+
+-- Query 11: Show the names of all the books lastname6 firstname6 was responsible for
+SELECT DISTINCT B.Title
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+JOIN db_employee E ON O.EmployeeID = E.EmployeeID
+WHERE E.LastName = 'lastname6' AND E.FirstName = 'firstname6';
+
+Execution:
+Title
+book6
+book7
+book3
+book4
+book1
+
+-- Query 12: Show the names of all the ordered books and their total quantities. List the result in ascending quantity
+SELECT B.Title, SUM(OD.Quantity) AS TotalQuantity
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+GROUP BY B.BookID, B.Title
+ORDER BY TotalQuantity ASC;
+
+-- Query 13: Show the names of the customers who ordered at least 2 books
+SELECT C.LastName, C.FirstName
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+HAVING COUNT(DISTINCT OD.BookID) >= 2;
+
+-- Query 14: Show the name of the customers who have ordered at least a book in category3 or category4 and the book names
+SELECT DISTINCT C.LastName, C.FirstName, B.Title
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+JOIN db_subject S ON B.SubjectID = S.SubjectID
+WHERE S.CategoryName IN ('category3', 'category4');
+
+-- Query 15: Show the name of the customer who has ordered at least one book written by author1
+SELECT DISTINCT C.LastName, C.FirstName
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+WHERE B.Author = 'author1';
+
+-- Query 16: Show the name and total sale (price of orders) of each employee
+SELECT E.LastName, E.FirstName, SUM(B.UnitPrice * OD.Quantity) AS TotalSales
+FROM db_employee E
+JOIN db_order O ON E.EmployeeID = O.EmployeeID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+JOIN db_book B ON OD.BookID = B.BookID
+GROUP BY E.EmployeeID, E.LastName, E.FirstName;
+
+-- Query 17: Show the book names and their respective quantities for open orders (the orders which have not been shipped) at midnight 08/04/2016
+SELECT B.Title, OD.Quantity
+FROM db_book B
+JOIN db_order_detail OD ON B.BookID = OD.BookID
+JOIN db_order O ON OD.OrderID = O.OrderID
+WHERE O.ShippedDate IS NULL AND O.OrderDate <= '8/4/2016';
+
+-- Query 18: Show the names of customers who have ordered more than 1 book and the corresponding quantities. List the result in the descending quantity
+SELECT C.LastName, C.FirstName, SUM(OD.Quantity) AS TotalQuantity
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+GROUP BY C.CustomerID, C.LastName, C.FirstName
+HAVING COUNT(DISTINCT OD.BookID) > 1
+ORDER BY TotalQuantity DESC;
+
+-- Query 19: Show the names of customers who have ordered more than 3 books and their respective telephone numbers
+SELECT C.LastName, C.FirstName, C.Phone
+FROM db_customer C
+JOIN db_order O ON C.CustomerID = O.CustomerID
+JOIN db_order_detail OD ON O.OrderID = OD.OrderID
+GROUP BY C.CustomerID, C.LastName, C.FirstName, C.Phone
+HAVING COUNT(DISTINCT OD.BookID) > 3;
